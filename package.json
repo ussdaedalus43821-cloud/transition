@@ -1,0 +1,15 @@
+{
+  "name": "transition",
+  "version": "0.1.0",
+  "description": "Transition (working title) — a facility electrification / solar-EV fleet transition simulation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "http-server . -p 8080 -c-1"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
