@@ -33,6 +33,14 @@ export const SCHOOL_BUS_DEPOT_PRESET: FacilityProfile = {
       meanAnnualTempF: 53.4,
       seasonalAmplitudeF: 22.5,
       dailyAmplitudeF: 9.2,
+      // Real elevation, Columbus, OH (~889 ft) — closes seam_reconnaissance.md
+      // §7's second residual gap alongside solarIrradianceWPerM2 below.
+      altitudeFt: 889,
+      // Placeholder — no real Columbus-specific peak-irradiance figure
+      // sourced, matching every ev-thermal-sim reference profile's own
+      // convention for this field. Not the same quantity as
+      // solarYieldFactor above — see ClimateZone's own doc comment.
+      solarIrradianceWPerM2: 250,
     },
   },
   electrical: {
@@ -216,6 +224,14 @@ export const TANK_WASH_PRESET: FacilityProfile = {
       meanAnnualTempF: 50.2,
       seasonalAmplitudeF: 26.3,
       dailyAmplitudeF: 10.3,
+      // Real elevation, Cedar Rapids, IA (~810 ft) — closes
+      // seam_reconnaissance.md §7's second residual gap alongside
+      // solarIrradianceWPerM2 below.
+      altitudeFt: 810,
+      // Placeholder — reused from the bus depot preset's own figure, not
+      // real Iowa-specific solar-resource data, same convention as
+      // solarYieldFactor above already follows for this preset.
+      solarIrradianceWPerM2: 250,
     },
   },
   electrical: {

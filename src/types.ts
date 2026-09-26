@@ -135,6 +135,26 @@ export interface ClimateZone {
   seasonalAmplitudeF: number;
   /** Half the average monthly high-low spread, averaged across all 12 months (not the single most extreme month) — a representative typical-day swing, since ev-thermal-sim's diurnal cosine applies one fixed daily_amplitude_k uniformly across the whole year rather than varying it month to month. Matches Climate.daily_amplitude_k semantics. */
   dailyAmplitudeF: number;
+  /**
+   * Real facility elevation, in feet (matching this file's Fahrenheit/
+   * imperial convention — convert at the seam boundary: altitudeM =
+   * altitudeFt * 0.3048). Closes the second of two residual gaps
+   * ev-thermal-sim's seam_reconnaissance.md §7 found after the three
+   * temperature fields above (gap 3) were closed: a real Scenario for the
+   * seam couldn't be built without this and solarIrradianceWPerM2 below,
+   * even though gap 3 itself was done. A trivial per-location lookup, not
+   * placeholder data.
+   */
+  altitudeFt: number;
+  /**
+   * Placeholder peak solar irradiance, in W/m^2 — matches ev-thermal-sim's
+   * Climate.solar_irradiance_w_per_m2 (a real field used for cabin heat-gain
+   * modeling), NOT the same quantity as solarYieldFactor above (an annual
+   * generation-yield figure for solar-array sizing). A generic placeholder
+   * is sufficient for a first version (every ev-thermal-sim reference
+   * profile already uses one too), per seam_reconnaissance.md §7.
+   */
+  solarIrradianceWPerM2: number;
 }
 
 export interface FacilityProfile {
