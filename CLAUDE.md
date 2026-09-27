@@ -125,3 +125,31 @@ ev-thermal-sim's seam reconnaissance already flagged as load-bearing.
 - **Scaffolded but unused**: `VehicleClass.replacementCycleYears` (every
   conversion is full-price regardless of vehicle age) and
   `Bay.powerDrawKWPlaceholder` (charger siting isn't wired to bays).
+- **First user test (2026-09-27) — finding recorded, no fix built yet;
+  see `docs/DESIGN_QUESTIONS.md` Q-0001.** The user opened the app for
+  the first time, picked the School Bus Depot preset, "couldn't figure
+  out what to do, hit one of the speed buttons, watched a year pass and
+  $64k of cash disappear with no explanation, and gave up." Their own
+  diagnosis, applying equally to the sibling ev-thermal-sim dashboard's
+  own first-user-test finding the same day: "tools built by and for
+  someone who already knows what they're looking at... designed to be
+  correct, not to be usable by someone encountering them cold."
+  **Checked directly, not just taken at face value**: the panel the
+  user's core decisions live in (solar install, service upgrade, charger
+  install — not just the interconnection-study button) is headed
+  `<h3>Test Actions</h3>` in `src/ui/overviewTab.ts` (line ~555), with a
+  caption describing it as proving "the commitment-queue mechanic end to
+  end" — literal developer/engineering framing shipped straight to the
+  player screen, not a paraphrase. A cash-event explanation DOES exist
+  (`renderRecentEventLine`, `overviewTab.ts` ~line 156) but is a single
+  11.5px, low-contrast ("text-faint") line above the main gauges — easy
+  to miss, and it doesn't explain magnitude or consequence, which
+  matches the user's "no explanation" experience even though the app
+  isn't literally silent about it. There is no mission statement, no
+  explanation of the year-20 objective tiers, and no in-app indication
+  of what a first action should be.
+  **Not fixed — explicitly deferred by the user's own instruction**: "Do
+  not implement a fix yet... I want to see the writeups before we scope
+  the fix, and I want to do one more playtest with someone who isn't me
+  before building anything." See Q-0001 for the scoped gap list and
+  candidate fixes, not chosen from yet.
