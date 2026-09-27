@@ -3,9 +3,10 @@ import type { AppCtx, TabModule } from "./types.js";
 import { formatDate } from "../engine/clock.js";
 import { money } from "./format.js";
 import { overviewTab } from "./overviewTab.js";
+import { batteryHealthTab } from "./batteryHealthTab.js";
 import { INSOLVENCY_THRESHOLD_MONTHS } from "../constants.js";
 
-const TABS: TabModule[] = [overviewTab]; // more tabs (Electrical, Fleet, Finance, Incentives) land in later passes
+const TABS: TabModule[] = [overviewTab, batteryHealthTab]; // more tabs (Electrical, Fleet, Finance, Incentives) land in later passes
 
 let rootEl: HTMLElement | null = null;
 let ctx: AppCtx | null = null;

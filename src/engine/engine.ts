@@ -53,6 +53,7 @@ import {
 } from "../constants.js";
 import { dateFromOrdinal, formatDate, monthOrdinal } from "./clock.js";
 import { SEAM_TABLE_ROWS } from "../seamTable.js";
+import type { SeamTableRow } from "../seamTable.js";
 import type {
   ActiveLoan,
   ChargerType,
@@ -802,34 +803,48 @@ export function computeTrailingUptimeAverage(state: GameState, months = 3): numb
 }
 
 /**
+ * Looks up the seam-table row for this fleet's vehicle class, or null if
+ * none exists (no manufacturerProfileKey set, or no SEAM_TABLE_ROWS entry
+ * matches it). v1 simplification: keyed off fleet.vehicleClasses[0], since
+ * routes don't carry their own vehicle-class reference (see
+ * manufacturerProfileKey's own doc comment in types.ts) — this only gives
+ * correct per-route data for a single-vehicle-class fleet, true of both
+ * presets today. Exported for src/ui/batteryHealthTab.ts, which needs the
+ * same lookup to show projected (not just current) SOH.
+ */
+export function seamRowForFleet(facility: FacilityProfile): SeamTableRow | null {
+  const manufacturerProfileKey = facility.fleet.vehicleClasses[0]?.manufacturerProfileKey;
+  if (!manufacturerProfileKey) return null;
+  return SEAM_TABLE_ROWS.find((row) => row.vehicleClass === manufacturerProfileKey) ?? null;
+}
+
+/**
+ * Cumulative SOH loss, in percentage points, at monthsSinceConversion --
+ * clamped to seamRow's own monthlySohDeltaPct length (its
+ * sourceDurationYears × 12): a horizon longer than the table's keeps the
+ * last cumulative loss rather than extrapolating past data ev-thermal-sim
+ * never generated. 0 at/before conversion (monthsSinceConversion <= 0).
+ * Exported for src/ui/batteryHealthTab.ts alongside seamRowForFleet.
+ */
+export function cumulativeSohLossPct(seamRow: SeamTableRow, monthsSinceConversion: number): number {
+  if (monthsSinceConversion <= 0) return 0;
+  const monthsElapsed = Math.min(monthsSinceConversion, seamRow.monthlySohDeltaPct.length);
+  return seamRow.monthlySohDeltaPct.slice(0, monthsElapsed).reduce((sum, v) => sum + v, 0);
+}
+
+/**
  * Updates route.batterySohPercent from ev-thermal-sim's seam-table data
  * (src/seamTable.ts, generated from that sibling project's
  * examples/generate_seam_table.py) — track-only for now, no cash/uptime/
- * cash-flow consequence wired to this value yet. Looks up the seam-table
- * row via fleet.vehicleClasses[0].manufacturerProfileKey, a v1
- * simplification: routes don't carry their own vehicle-class reference
- * (see manufacturerProfileKey's own doc comment in types.ts), so this only
- * gives correct per-route data for a single-vehicle-class fleet, true of
- * both presets today. Leaves batterySohPercent null (a no-op) when the
- * fleet's vehicle class has no manufacturerProfileKey, or no seam-table row
- * matches it. monthsSinceConversion is clamped to the row's own
- * monthlySohDeltaPct length (its sourceDurationYears × 12) — a run longer
- * than the table's horizon keeps the last cumulative loss rather than
- * extrapolating past data ev-thermal-sim never generated.
+ * cash-flow consequence wired to this value yet. See seamRowForFleet's own
+ * doc comment for the v1 single-vehicle-class-fleet lookup simplification.
+ * Leaves batterySohPercent null (a no-op) when the fleet's vehicle class
+ * has no manufacturerProfileKey, or no seam-table row matches it.
  */
 function updateRouteBatterySohPercent(facility: FacilityProfile, route: Route, monthsSinceConversion: number): void {
-  const manufacturerProfileKey = facility.fleet.vehicleClasses[0]?.manufacturerProfileKey;
-  if (!manufacturerProfileKey) return;
-  const seamRow = SEAM_TABLE_ROWS.find((row) => row.vehicleClass === manufacturerProfileKey);
+  const seamRow = seamRowForFleet(facility);
   if (!seamRow) return;
-
-  if (monthsSinceConversion <= 0) {
-    route.batterySohPercent = 100;
-    return;
-  }
-  const monthsElapsed = Math.min(monthsSinceConversion, seamRow.monthlySohDeltaPct.length);
-  const cumulativeLossPct = seamRow.monthlySohDeltaPct.slice(0, monthsElapsed).reduce((sum, v) => sum + v, 0);
-  route.batterySohPercent = 100 - cumulativeLossPct;
+  route.batterySohPercent = 100 - cumulativeSohLossPct(seamRow, monthsSinceConversion);
 }
 
 /**
