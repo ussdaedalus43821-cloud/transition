@@ -71,6 +71,11 @@ export const SCHOOL_BUS_DEPOT_PRESET: FacilityProfile = {
         avgAnnualMileage: 70 * 180, // 70mi/day × ~180 school days/year — placeholder, not a real ridership study
         currentFuelType: "diesel",
         replacementCycleYears: 12, // placeholder pending real fleet-management data
+        // Links this fleet to ev-thermal-sim's Blue Bird Vision Electric
+        // seam-table row (examples/generate_seam_table.py's Columbus, OH
+        // point estimate) — the only vehicle class with a seam-table row so
+        // far. See manufacturerProfileKey's own doc comment in types.ts.
+        manufacturerProfileKey: "blue_bird_vision_electric",
       },
     ],
     // Placeholder split of the 50-bus fleet across route tiers — not a real
@@ -78,10 +83,10 @@ export const SCHOOL_BUS_DEPOT_PRESET: FacilityProfile = {
     // the realistic "start with a small pilot route" pattern real districts
     // actually follow when electrifying.
     routes: [
-      { id: "route_elementary", label: "Elementary AM/PM", dailyMiles: 55, dedicatedVehicleCount: 20, evViable: true, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_middle", label: "Middle School", dailyMiles: 75, dedicatedVehicleCount: 15, evViable: true, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_high", label: "High School", dailyMiles: 95, dedicatedVehicleCount: 12, evViable: true, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_specialed", label: "Special Education / Door-to-Door", dailyMiles: 110, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null },
+      { id: "route_elementary", label: "Elementary AM/PM", dailyMiles: 55, dedicatedVehicleCount: 20, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_middle", label: "Middle School", dailyMiles: 75, dedicatedVehicleCount: 15, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_high", label: "High School", dailyMiles: 95, dedicatedVehicleCount: 12, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_specialed", label: "Special Education / Door-to-Door", dailyMiles: 110, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
     ],
     // Relocated from the old global constants (ELECTRIC_BUS_COST_PLACEHOLDER,
     // DIESEL_SAVINGS_PER_VEHICLE_MONTHLY_PLACEHOLDER,
@@ -284,10 +289,10 @@ export const TANK_WASH_PRESET: FacilityProfile = {
     // economics harder than the bus depot's, per the lower
     // targetElectrificationRateByYear20 below.
     routes: [
-      { id: "route_intown_generalmills", label: "In-Town Short Haul — General Mills Style", dailyMiles: 40, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_intown_quaker", label: "In-Town Short Haul — Quaker Style", dailyMiles: 55, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_regional_midwest", label: "Regional Haul — Midwest Corridor", dailyMiles: 280, dedicatedVehicleCount: 7, evViable: false, converted: false, conversionCompletionOrdinal: null },
-      { id: "route_regional_east", label: "Regional Haul — Eastern Corridor", dailyMiles: 340, dedicatedVehicleCount: 5, evViable: false, converted: false, conversionCompletionOrdinal: null },
+      { id: "route_intown_generalmills", label: "In-Town Short Haul — General Mills Style", dailyMiles: 40, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_intown_quaker", label: "In-Town Short Haul — Quaker Style", dailyMiles: 55, dedicatedVehicleCount: 3, evViable: true, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_regional_midwest", label: "Regional Haul — Midwest Corridor", dailyMiles: 280, dedicatedVehicleCount: 7, evViable: false, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
+      { id: "route_regional_east", label: "Regional Haul — Eastern Corridor", dailyMiles: 340, dedicatedVehicleCount: 5, evViable: false, converted: false, conversionCompletionOrdinal: null, batterySohPercent: null },
     ],
     // Distinct, research-grounded truck figures — fixes audit finding #1:
     // before this pass, these numbers were global constants shared with

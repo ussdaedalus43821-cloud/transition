@@ -289,7 +289,16 @@ function renderRouteRow(state: GameState, route: Route): string {
     <div class="text-faint" style="font-size:11.5px;">${route.dedicatedVehicleCount} buses · ${route.dailyMiles} mi/day · requires ${requiredKW} kW charging</div>`;
 
   if (route.converted) {
-    return `<div class="route-row">${head}</div>`;
+    // Track-only display (no gameplay consequence yet) — see
+    // Route.batterySohPercent's doc comment in types.ts and
+    // updateRouteBatterySohPercent() in engine.ts. null means either the
+    // fleet's vehicle class has no ev-thermal-sim seam-table row yet (Tank
+    // Wash's trucks) or this route hasn't ticked forward since conversion.
+    const sohLine =
+      route.batterySohPercent !== null
+        ? `<div class="text-faint" style="font-size:11px;margin-top:4px;">Battery SOH: <strong>${route.batterySohPercent.toFixed(1)}%</strong></div>`
+        : "";
+    return `<div class="route-row">${head}${sohLine}</div>`;
   }
   if (pending) {
     return `<div class="route-row">${head}<div class="text-faint" style="font-size:11px;margin-top:4px;">Already underway.</div></div>`;

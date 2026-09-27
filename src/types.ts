@@ -37,6 +37,19 @@ export interface VehicleClass {
   currentFuelType: FuelType;
   /** Placeholder pending real fleet-management replacement-cycle data. Not used by any cost math this pass — routeConversion treats replacement-cycle timing as irrelevant for now (existing buses always convert at full new-vehicle cost, no early-retirement discount/penalty), a deliberate simplification, not an oversight. */
   replacementCycleYears: number;
+  /**
+   * Key into ev-thermal-sim's seamTable.ts SEAM_TABLE_ROWS.vehicleClass —
+   * links this fleet's vehicles to a real manufacturer thermal/aging
+   * profile, when one exists. Undefined means no seam-table row exists for
+   * this vehicle class yet, so Route.batterySohPercent tracking is skipped
+   * for every route in this fleet. Routes don't carry their own vehicle-
+   * class reference (this schema's fleet.vehicleClasses and fleet.routes
+   * are separate sibling arrays), so the engine looks this up from
+   * fleet.vehicleClasses[0] for every route — a v1 simplification that
+   * holds only because every preset so far has exactly one VehicleClass; a
+   * multi-class fleet would need routes to reference their class directly.
+   */
+  manufacturerProfileKey?: string;
 }
 
 export interface Route {
@@ -49,6 +62,20 @@ export interface Route {
   converted: boolean;
   /** monthOrdinal() at the moment this route's routeConversion completed; null while converted is false. Same "set at completion, derive months-since by subtraction" pattern as SimState.solarCompletionOrdinal (4.6) — feeds ev_drivetrain_failure's warranty-window check. */
   conversionCompletionOrdinal: number | null;
+  /**
+   * Battery state-of-health (0-100), tracked once this route is converted by
+   * looking up ev-thermal-sim's seamTable.ts SEAM_TABLE_ROWS via the
+   * fleet's VehicleClass.manufacturerProfileKey and decrementing from that
+   * row's monthlySohDeltaPct each month since conversionCompletionOrdinal
+   * (see rollEvents() in engine.ts, alongside the ev_drivetrain_failure
+   * months-since-conversion computation it already does). null before
+   * conversion, or permanently, if the fleet's vehicle class has no
+   * manufacturerProfileKey. Track-only for now, no gameplay/cash/uptime
+   * consequence wired to this value yet — a deliberate first pass so the
+   * seam's data actually flows before any consequence is designed on top
+   * of it.
+   */
+  batterySohPercent: number | null;
 }
 
 export interface IncentiveProgram {

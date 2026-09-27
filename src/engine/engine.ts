@@ -52,6 +52,7 @@ import {
   nextId,
 } from "../constants.js";
 import { dateFromOrdinal, formatDate, monthOrdinal } from "./clock.js";
+import { SEAM_TABLE_ROWS } from "../seamTable.js";
 import type {
   ActiveLoan,
   ChargerType,
@@ -801,6 +802,37 @@ export function computeTrailingUptimeAverage(state: GameState, months = 3): numb
 }
 
 /**
+ * Updates route.batterySohPercent from ev-thermal-sim's seam-table data
+ * (src/seamTable.ts, generated from that sibling project's
+ * examples/generate_seam_table.py) — track-only for now, no cash/uptime/
+ * cash-flow consequence wired to this value yet. Looks up the seam-table
+ * row via fleet.vehicleClasses[0].manufacturerProfileKey, a v1
+ * simplification: routes don't carry their own vehicle-class reference
+ * (see manufacturerProfileKey's own doc comment in types.ts), so this only
+ * gives correct per-route data for a single-vehicle-class fleet, true of
+ * both presets today. Leaves batterySohPercent null (a no-op) when the
+ * fleet's vehicle class has no manufacturerProfileKey, or no seam-table row
+ * matches it. monthsSinceConversion is clamped to the row's own
+ * monthlySohDeltaPct length (its sourceDurationYears × 12) — a run longer
+ * than the table's horizon keeps the last cumulative loss rather than
+ * extrapolating past data ev-thermal-sim never generated.
+ */
+function updateRouteBatterySohPercent(facility: FacilityProfile, route: Route, monthsSinceConversion: number): void {
+  const manufacturerProfileKey = facility.fleet.vehicleClasses[0]?.manufacturerProfileKey;
+  if (!manufacturerProfileKey) return;
+  const seamRow = SEAM_TABLE_ROWS.find((row) => row.vehicleClass === manufacturerProfileKey);
+  if (!seamRow) return;
+
+  if (monthsSinceConversion <= 0) {
+    route.batterySohPercent = 100;
+    return;
+  }
+  const monthsElapsed = Math.min(monthsSinceConversion, seamRow.monthlySohDeltaPct.length);
+  const cumulativeLossPct = seamRow.monthlySohDeltaPct.slice(0, monthsElapsed).reduce((sum, v) => sum + v, 0);
+  route.batterySohPercent = 100 - cumulativeLossPct;
+}
+
+/**
  * Step 4 of the tick sequence design ("event roll") — proof of mechanism
  * with exactly the two EVENT_TABLE entries; see that constant's comment for
  * what's deliberately NOT built yet (the rest of the event table, severity
@@ -1161,6 +1193,9 @@ export function rollEvents(state: GameState): void {
   for (const route of state.facility.fleet.routes) {
     if (!route.converted || route.conversionCompletionOrdinal === null) continue;
     const monthsSinceConversion = nowOrdinal - route.conversionCompletionOrdinal;
+
+    updateRouteBatterySohPercent(state.facility, route, monthsSinceConversion);
+
     const isPostWarranty = monthsSinceConversion > EV_DRIVETRAIN_WARRANTY_THRESHOLD_MONTHS;
     let probability = isPostWarranty
       ? drivetrainFailureEntry.baseMonthlyProbability * EV_DRIVETRAIN_FAILURE_POST_WARRANTY_MULTIPLIER
