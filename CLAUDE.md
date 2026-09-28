@@ -148,8 +148,27 @@ ev-thermal-sim's seam reconnaissance already flagged as load-bearing.
   isn't literally silent about it. There is no mission statement, no
   explanation of the year-20 objective tiers, and no in-app indication
   of what a first action should be.
-  **Not fixed — explicitly deferred by the user's own instruction**: "Do
-  not implement a fix yet... I want to see the writeups before we scope
-  the fix, and I want to do one more playtest with someone who isn't me
-  before building anything." See Q-0001 for the scoped gap list and
-  candidate fixes, not chosen from yet.
+  **Revised (2026-09-28): a second playtest was called off as premature
+  — the user's own reasoning: "if I can't use the tools myself, a
+  stranger can't either." A smaller "make it usable at all" milestone
+  was done instead, deliberately scoped below Q-0001's full "teaching
+  layer" gap list — no new mechanics, just explain what's on screen.**
+  Added: a mission-statement banner (`renderMissionBanner`, using the
+  real `OBJECTIVE_TIER_SUCCESSFUL_MIN`/`_EXCEPTIONAL_MIN`/
+  `YEARS_TO_EVALUATE` constants directly, not restated numbers that
+  could drift from them); the "Test Actions" card renamed to "Available
+  Actions," with the genuinely-real actions (solar, service upgrade,
+  chargers) each given a heading and a "why it matters" line, and the
+  interconnection-study action — confirmed by reading `engine.ts`
+  directly to have NO actual gameplay effect
+  (`onCompleteInterconnectionHeadroomMultiplier: 1`, excluded from the
+  completion-effects pass) — separated out, visually de-emphasized, and
+  honestly labeled "(prototype)" with a caption stating plainly that it
+  has no effect yet, rather than dressed up with an invented reason;
+  and `renderRecentEventLine`'s single tiny, easy-to-miss line replaced
+  with `renderRecentActivityPanel`, a proper small card showing the last
+  5 events at normal size/contrast — still pure presentation of
+  `SimState.eventLog`, which already recorded every one of these.
+  `npx tsc` compiles clean. Q-0001 stays open — this pass doesn't touch
+  onboarding flow, action sequencing guidance, or anything beyond making
+  what's already on screen legible.

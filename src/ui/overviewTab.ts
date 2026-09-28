@@ -9,6 +9,8 @@ import {
   INTERCONNECTION_STUDY_MONTHS,
   INTERCONNECTION_STUDY_TOTAL_COST,
   MAINTENANCE_PROGRAM_COST_PER_VEHICLE,
+  OBJECTIVE_TIER_EXCEPTIONAL_MIN,
+  OBJECTIVE_TIER_SUCCESSFUL_MIN,
   ROUTE_CONVERSION_DEPOSIT_FRACTION,
   ROUTE_CONVERSION_MONTHS,
   SERVICE_UPGRADE_MONTHS,
@@ -18,6 +20,7 @@ import {
   SOLAR_DESIGN_PERMIT_FRACTION,
   SOLAR_INSTALL_MONTHS,
   SPARE_CONDUIT_COST_MULTIPLIER,
+  YEARS_TO_EVALUATE,
 } from "../constants.js";
 import {
   availableInterconnectionKW,
@@ -150,15 +153,39 @@ function renderItcBanner(state: GameState): string {
   </div>`;
 }
 
-// Proof-of-mechanism only: the single most recent fired event, if any —
-// not a history panel. See SimState.eventLog for the full (queryable but
-// not yet UI-surfaced) record.
-function renderRecentEventLine(state: GameState): string {
+// Milestone: usability pass (docs/DESIGN_QUESTIONS.md Q-0001) — a one-line
+// orientation for a first-time player, using the real evaluateFinalOutcome
+// thresholds directly (not restated numbers that could drift from them).
+function renderMissionBanner(): string {
+  return `<div class="banner banner-info" style="margin-bottom:12px;">
+    <strong>Mission:</strong> convert ${pct(OBJECTIVE_TIER_SUCCESSFUL_MIN)}-${pct(OBJECTIVE_TIER_EXCEPTIONAL_MIN)} of your fleet to electric by year ${YEARS_TO_EVALUATE} — without going broke.
+    Cash can't go negative for long, and your debt coverage (DSCR) and route uptime both have to stay above their minimums along the way — hitting the electrification target while wrecking the business doesn't count.
+  </div>`;
+}
+
+// Milestone: usability pass (Q-0001) — was a single tiny, faint,
+// easy-to-miss line showing only the very latest event; cash movements
+// (equipment failures, rate shocks) were effectively invisible unless a
+// player was staring at this exact spot at the right tick. Now a proper
+// small panel, last 5 events, newest first — still purely presentational
+// (SimState.eventLog already recorded every one of these; nothing new is
+// computed here).
+const RECENT_ACTIVITY_COUNT = 5;
+function renderRecentActivityPanel(state: GameState): string {
   const log = state.sim.eventLog;
   if (log.length === 0) return "";
-  const mostRecent = log[log.length - 1];
-  const when = formatDate(mostRecent.month, mostRecent.year);
-  return `<div class="text-faint" style="font-size:11.5px;margin-top:8px;">Most recent event (${escapeHtml(when)}): ${escapeHtml(mostRecent.effect)}</div>`;
+  const recent = log.slice(-RECENT_ACTIVITY_COUNT).reverse();
+  return `<div class="card" style="margin-bottom:12px;">
+    <h3>Recent Activity</h3>
+    ${recent
+      .map(
+        (entry) =>
+          `<div style="font-size:12.5px;padding:4px 0;border-top:1px solid var(--border);">
+            <span class="text-faint">${escapeHtml(formatDate(entry.month, entry.year))}</span> — ${escapeHtml(entry.effect)}
+          </div>`,
+      )
+      .join("")}
+  </div>`;
 }
 
 function renderSolarSection(state: GameState): string {
@@ -179,6 +206,8 @@ function renderSolarSection(state: GameState): string {
 
   return `
   <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+    <h3 style="margin-bottom:4px;">Solar Array</h3>
+    <div class="text-faint" style="font-size:12.5px;margin-bottom:6px;">Generates power that cuts your monthly electricity bill, and can qualify for the 30% federal tax credit (ITC) shown below if committed before the safe-harbor deadline.</div>
     <div class="text-faint" style="font-size:12.5px;">
       Projected array: <strong>${sizing.sizedKW.toFixed(1)} kW</strong> — sized by ${escapeHtml(CONSTRAINT_LABEL[sizing.bindingConstraint])}
       (roof ${sizing.roofCapacityKW.toFixed(1)} kW · energy target ${sizing.energyTargetKW.toFixed(1)} kW · interconnection ${sizing.interconnectionHeadroomKW.toFixed(1)} kW)
@@ -208,8 +237,9 @@ function renderServiceUpgradeSection(state: GameState): string {
 
   return `
   <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+    <h3 style="margin-bottom:4px;">Electrical Service Upgrade</h3>
     <div class="text-faint" style="font-size:12.5px;">
-      Increases interconnection headroom by 50% once complete — the utility study queue plus construction lead time can't be bought down, regardless of budget.
+      Why it matters: solar and chargers both draw against your interconnection headroom — this increases that headroom by 50% once complete, so it's usually what unblocks further growth once the utility connection itself is the limit. The utility study queue plus construction lead time can't be bought down, regardless of budget.
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" data-action="overview:commitServiceUpgrade" ${canCommit ? "" : "disabled"}>
@@ -241,7 +271,8 @@ function renderChargerSection(state: GameState): string {
 
   return `
   <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-    <h3 style="margin-bottom:8px;">Charger Install</h3>
+    <h3 style="margin-bottom:4px;">Charger Install</h3>
+    <div class="text-faint" style="font-size:12.5px;margin-bottom:6px;">Why it matters: a route can't be converted to electric until enough charger capacity is installed to serve it — this is what makes route conversion (below) possible.</div>
     <div class="text-faint" style="font-size:11px;margin-bottom:8px;">Available interconnection headroom: <strong>${available.toFixed(1)} kW</strong></div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <label class="text-faint" style="font-size:12px;display:flex;align-items:center;gap:4px;">
@@ -539,8 +570,9 @@ export const overviewTab: TabModule = {
         : "";
 
     return `
+    ${renderMissionBanner()}
     ${renderItcBanner(state)}
-    ${renderRecentEventLine(state)}
+    ${renderRecentActivityPanel(state)}
 
     <div class="grid grid-cols-4">
       <div class="card">${cashGauge(state)}</div>
@@ -553,17 +585,21 @@ export const overviewTab: TabModule = {
       ${renderPendingCommitments(state)}
 
       <div class="card">
-        <h3>Test Actions</h3>
-        <p class="text-faint" style="font-size:12.5px;">Proves the commitment-queue mechanic end to end: commits cash now, draws more at months 6 and 12, and finishes after ${INTERCONNECTION_STUDY_MONTHS} months.</p>
-        <div class="btn-row">
-          <button class="btn btn-primary" data-action="overview:commitInterconnectionStudy" ${canCommit ? "" : "disabled"}>
-            Commit to Interconnection Study — ${INTERCONNECTION_STUDY_MONTHS}mo, ${money(INTERCONNECTION_STUDY_TOTAL_COST)}
-          </button>
-        </div>
-        ${disabledReason ? `<div class="text-faint" style="font-size:11.5px;margin-top:6px;">${escapeHtml(disabledReason)}</div>` : ""}
+        <h3>Available Actions</h3>
+        <div class="text-faint" style="font-size:12.5px;">Commit to any of these when you're ready — each has a real lead time and cost you can't skip regardless of budget.</div>
         ${renderSolarSection(state)}
         ${renderServiceUpgradeSection(state)}
         ${renderChargerSection(state)}
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);opacity:0.6;">
+          <h3 style="margin-bottom:4px;font-size:13px;">Interconnection Study (prototype)</h3>
+          <p class="text-faint" style="font-size:11.5px;">Exercises the commitment/cost-schedule system end to end — costs cash and takes ${INTERCONNECTION_STUDY_MONTHS} months, but has no effect on your facility yet.</p>
+          <div class="btn-row">
+            <button class="btn" data-action="overview:commitInterconnectionStudy" ${canCommit ? "" : "disabled"}>
+              Commit — ${INTERCONNECTION_STUDY_MONTHS}mo, ${money(INTERCONNECTION_STUDY_TOTAL_COST)}
+            </button>
+          </div>
+          ${disabledReason ? `<div class="text-faint" style="font-size:11.5px;margin-top:6px;">${escapeHtml(disabledReason)}</div>` : ""}
+        </div>
       </div>
     </div>
 
